@@ -1,0 +1,8 @@
+# cluster1 생성
+k3d cluster create cluster1 --agents 1 --kubeconfig-update-default=false --kubeconfig-switch-context=false
+
+# cluster2 생성
+k3d cluster create cluster2 --agents 1 --kubeconfig-update-default=false --kubeconfig-switch-context=false
+
+# cluster3 생성
+k3d cluster create cluster3 --agents 1 --kubeconfig-update-default=false --kubeconfig-switch-context=false
