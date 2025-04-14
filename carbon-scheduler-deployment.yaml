@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carbon-scheduler
+  labels:
+    app: carbon-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: carbon-scheduler
+  template:
+    metadata:
+      labels:
+        app: carbon-scheduler
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: carbon-scheduler
+        image: jungwonhee/carbon-scheduler:latest
+        imagePullPolicy: Always
