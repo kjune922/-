@@ -1,0 +1,1 @@
+kubectl --kubeconfig kubeconfigs/cluster1.yaml get nodes
