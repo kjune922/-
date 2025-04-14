@@ -1,0 +1,5 @@
+mkdir -p kubeconfigs
+
+k3d kubeconfig get cluster1 > kubeconfigs/cluster1.yaml
+k3d kubeconfig get cluster2 > kubeconfigs/cluster2.yaml
+k3d kubeconfig get cluster3 > kubeconfigs/cluster3.yaml
