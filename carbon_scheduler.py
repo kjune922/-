@@ -4,6 +4,14 @@ import os
 import random
 from datetime import datetime
 
+"""
+<코드 요약>
+1. clusters.json 파일에서 클러스터별 탄소배출량 정보를 읽음
+2. 탄소배출량이 가장 낮은 클러스터를 선택
+3. 해당 클러스터의 kubeconfig를 불러옴
+4. 새로운 Pod를 배포
+"""
+
 CLUSTERS_FILE = "clusters.json"
 KUBECONFIG_DIR = "./kubeconfigs"
 

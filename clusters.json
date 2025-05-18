@@ -1,0 +1,10 @@
+{
+  "cluster1": {
+    "carbon": 15.7,
+    "timestamp": "2025-05-18 14:30:00"
+  },
+  "cluster2": {
+    "carbon": 11.3,
+    "timestamp": "2025-05-18 14:30:00"
+  }
+}

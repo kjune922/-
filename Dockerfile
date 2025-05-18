@@ -1,20 +1,20 @@
-# 베이스 이미지로 Python을 사용
-FROM python:3.9-slim
+# 베이스 이미지 선택
+FROM python:3.10-slim
 
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 로컬 환경에서 필요한 파일들을 컨테이너로 복사
-COPY requirements.txt .
+# 로컬 파일 복사
+COPY . .
 
 # 필요한 패키지 설치
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 코드 복사
-COPY . .
+# kubeconfig 접근을 위해 권한 설정 (옵션)
+RUN mkdir -p /root/.kube
 
-# 포트 노출 (Flask는 기본적으로 5000 포트를 사용)
-EXPOSE 5000
+# 환경변수 설정 (예시로 KUBECONFIG_DIR 지정)
+ENV KUBECONFIG_DIR=/app/kubeconfigs
 
-# 애플리케이션 실행
+# 기본 실행 명령: carbon_scheduler 실행
 CMD ["python", "carbon_scheduler.py"]
