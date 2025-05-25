@@ -14,6 +14,8 @@ from datetime import datetime
 
 CLUSTERS_FILE = "clusters.json"
 KUBECONFIG_DIR = "./kubeconfigs"
+# clusters.json: 클러스터 이름과 각 클러스터의 탄소배출량 정보가 담긴 JSON 파일
+# ./kubeconfigs/: 각 클러스터에 접근하기 위한 kubeconfig 파일들이 저장된 디렉터리
 
 def load_kube_config(cluster_name):
     config_path = os.path.join(KUBECONFIG_DIR, f"{cluster_name}_config")
@@ -24,6 +26,7 @@ def load_kube_config(cluster_name):
     except Exception as e:
         print(f"[X] Failed to load config for {cluster_name}: {e}")
         return False
+# 특정 클러스터의 kubeconfig 파일을 로드해서 해당 클러스터에 연결을 시도
 
 def create_pod(cluster_name, task_name):
     if not load_kube_config(cluster_name):
@@ -48,6 +51,9 @@ def create_pod(cluster_name, task_name):
         print(f"[✓] Pod {task_name} scheduled on {cluster_name}")
     except Exception as e:
         print(f"[X] Failed to schedule pod on {cluster_name}: {e}")
+# 선택된 클러스터에 task_name 이름의 Pod를 생성
+# nginx 이미지를 사용하는 컨테이너를 기본으로 갖는 Pod를 생성
+# Pod는 default 네임스페이스에 배포
 
 def select_cluster():
     if not os.path.exists(CLUSTERS_FILE):
@@ -62,6 +68,7 @@ def select_cluster():
         return None
 
     return min(clusters, key=lambda k: clusters[k]["carbon"])
+# clusters.json 파일에서 클러스터 정보를 읽고, carbon 값(탄소 배출량)이 가장 낮은 클러스터를 선택하여 반환
 
 if __name__ == "__main__":
     selected = select_cluster()
@@ -69,3 +76,4 @@ if __name__ == "__main__":
         task_name = f"task-{random.randint(1000, 9999)}"
         print(f"[▶] Assigning {task_name} to {selected}")
         create_pod(selected, task_name)
+# 선택한 클러스터로 랜덤한 이름의 새로운 pod 생성
