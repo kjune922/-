@@ -30,8 +30,10 @@ kluster(성곤) -> scheduling code(원희) -> 실시간 탄소 배출량 api + s
 
 ec2 서버 ssh키
 ```
-// 중지 후 재 시작할 때마다 바뀜
-ssh -i "visualization.pem" ubuntu@ec2-54-180-94-35.ap-northeast-2.compute.amazonaws.com
+// 인스턴스 중지 후 재 시작할 때마다 바뀜
+인스턴스 -> 연결 -> ssh 클라이언트 -> ssh 키 복사해서 git bash에서 pem키 위치 찾아서 입력해주면 됨.
+ex)
+ssh -i "visualization.pem" ubuntu@ec2-12-345-67-89.ap-northeast-2.compute.amazonaws.com
 ```
 
 ### 1단계 : ec2 서버 환경 세팅
@@ -250,7 +252,7 @@ export default defineConfig({
 
       '/api': {
 
-        target: 'http://172.31.37.242:5000', // 👉 EC2 내부 IP나 퍼블릭 IP
+        target: 'http://[ec2 프라이빗 ip]:5000', // EC2 내부(프라이빗) IP
 
         changeOrigin: true,
 
