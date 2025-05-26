@@ -145,11 +145,11 @@ task-5350   1/1     Running   0          6m3s
 // 로컬에 있는 flask, react를 ec2 서버로 전송
 ```
 // 코드 형식
-scp -i [pem키 위치]~/Desktop/visualization.pem [zip 파일 위치]~/Desktop/carbon_back.zip ubuntu@[ec2 퍼블릭 주소]54.180.94.35:~/
+scp -i [pem키 위치]~/Desktop/visualization.pem [zip 파일 위치]~/Desktop/carbon_back.zip ubuntu@[ec2 퍼블릭 ip]12.345.67.89:~/
 
-scp -i ~/Desktop/visualization.pem ~/Desktop/carbon_back.zip ubuntu@54.180.94.35:~/
+scp -i ~/Desktop/visualization.pem ~/Desktop/carbon_back.zip ubuntu@[ec2 퍼블릭 ip]:~/
 
-scp -i ~/Desktop/visualization.pem ~/Desktop/visualization.zip ubuntu@54.180.94.35:~/
+scp -i ~/Desktop/visualization.pem ~/Desktop/visualization.zip ubuntu@[ec2 퍼블릭 ip]:~/
 ```
 
 // ec2 서버에서 압축 해제
