@@ -7,7 +7,7 @@ import json
 실시간으로 바뀌는 탄소 배출량의 값을 받아와 clusters.json 파일에 갱신신
 """
 
-SERVER_URL = "http://<EC2-IP>:5000/status"  # 이 부분은 실제 EC2 IP로 바꾸기
+SERVER_URL = "https://carbon-server.onrender.com/status"  # 이 부분은 실제 EC2 IP로 바꾸기
 CLUSTERS_FILE = "clusters.json"
 
 def fetch_carbon_data():
