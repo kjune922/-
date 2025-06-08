@@ -29,7 +29,7 @@ def home():
     return 'Carbon 서버 작동중임'
 
 @app.route('/hello')
-def home()
+def home():
     return "Hello 프로메테우스!"
 
 
