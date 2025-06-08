@@ -4,294 +4,170 @@
 
 pod == 하나 이상의 컨테이너를 모아 놓은 것. 쿠버네티스 애플리케이션의 최소 단위임. 
 
+// local에서 A to Z까지 과정.
 
-- docker
-- kuber(kluster)
-- scheduling algorithm
-- agent?
-- ec2, api(flask)
-- 시각화 (react)
+Docker 이미지 빌드
 
-kluster(성곤) -> scheduling code(원희) -> 실시간 탄소 배출량 api + schduling code == api() 호출 ->api 기반 시각화  
+```bash
+// docker desktop 실행 시킨 상태에서 해야됨.
+// vscode에서 실행함.
+docker build -t carbon-exporter:latest .
+```
+
+k3d 세팅
+
+```bash
+// 설치 실패 떠서 관리자 권한으로 cmd 실행
+cd C:\Users\USER\Desktop\Carbon
+choco install k3d
+
+// 설치 완료 후 vscode 껐다가 다시 켜서 k3d 버전 확인
+k3d version
+
+// k3d 클러스터 확인
+k3d cluster list
+
+// k3d 클러스터 생성
+k3d cluster create carbon-cluster
+
+// exporter 이미지 빌드
+k3d image import carbon-exporter:latest -c carbon-cluster
+```
+
+k3d vs minikube
+
+✅ 이유: 너희 프로젝트 요구사항과 `k3d`의 적합성
+
+| 요구사항 | 왜 `k3d`가 적합한가 |
+| --- | --- |
+| ✅ Prometheus + Grafana 모니터링 | Helm 차트로 쉽게 설치 가능, 실습에 적합한 네트워크 구조 제공 |
+| ✅ Exporter 이미지 수동 배포 필요 | `k3d image import`로 로컬 빌드 이미지 바로 반영 가능 |
+| ✅ 멀티 클러스터 확장 계획 (Caspian 기반) | `k3d cluster create`로 여러 클러스터 시뮬레이션 가능 |
+| ✅ 로컬 실습 중심 (EC2나 실제 클라우드 X) | `k3d`는 Docker 기반으로 로컬에서 안전하게 작동함 |
+| ✅ 경량 Kubernetes 필요 | `minikube`보다 훨씬 가볍고 빠름 |
 
 ---
 
-- docker desktop 설치 완료.
-- kind(kubernetes in docker) 설치
-	- 로컬에 쿠버네티스 클러스터 생성을 위해서
-	- chocolatey로 간단하게 설치
-- kind로 cluster 생성 
-	- carbon-cluster 클러스터 생성
-	- kubectl 연결 설정 완료
-	- kubectl == 생성한 cluster들을 직접 관리하는 도구임.
+❌ 반대로 지금 상태 (Docker Desktop Kubernetes)의 문제점
+
+| 항목 | 한계 |
+| --- | --- |
+| Docker Desktop의 Kubernetes는 `docker build`한 이미지를 자동으로 인식 못 함 | 별도 레지스트리 설정 필요 |
+| Helm이나 multi-node 구성 연습에 불리 | k3d처럼 자유롭게 노드/클러스터 추가 불가 |
+| 프로젝트 제출/실습용 시연에 불편 | 발표 시 구조 설명이 복잡해짐 ("이건 Docker Desktop이고요…") |
 
 ---
-## ec2 서버 위에 시작
 
-ec2 서버 ssh키
-```
-// 인스턴스 중지 후 재 시작할 때마다 바뀜
-인스턴스 -> 연결 -> ssh 클라이언트 -> ssh 키 복사해서 git bash에서 pem키 위치 찾아서 입력해주면 됨.
-ex)
-ssh -i "visualization.pem" ubuntu@ec2-12-345-67-89.ap-northeast-2.compute.amazonaws.com
-```
+🔥 결론: 너희 프로젝트 성격상 `k3d` 사용이 가장 맞다
 
-### 1단계 : ec2 서버 환경 세팅
+만든 exporter 이미지를 클러스터에 배포
 
-// 시스템 패키지 업데이트
-```
-sudo apt update && sudo apt upgrade -y
-```
+```bash
+kubectl apply -f k8s/
 
-// Docker 설치
-```
-sudo apt install docker.io -y
-sudo systemctl enable docker
-sudo systemctl start docker
-```
+// 배포 실패.. 예전에 kind로 생성한 클러스터 api를 가리키고있음.
 
-// 권한 부여(현재 사용자가 uubntu일 경우)
-```
-sudo usermod -aG docker $USER
-```
+// cmd 를 관리자 권한으로 실행
+notepad %USERPROFILE%\.kube\config
 
-이제 exit로 나갔다가 다시 ec2 서버 접속하면 docker 권한 적용되어 있음.
+// notepad로 열린 파일에 아래 내용을 수정
+server: https://localhost:56330
 
-// k3s(경량 쿠버네티스) 설치
-```
-curl -sfL https://get.k3s.io | sh -
-```
-
-// kubectl 연결 설정
-```
-sudo mkdir -p ~/.kube
-sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-sudo chown ubuntu:ubuntu ~/.kube/config
-```
-// 여기서 한 번 막혔음.
-좋아요. 현재 문제가 되는 포인트는 `kubectl`이 여전히 **`/etc/rancher/k3s/k3s.yaml`** 파일을 참조하고 있다는 점입니다.  
-하지만 우리는 이미 해당 파일을 `~/.kube/config`로 복사해 두었기 때문에, kubectl이 이 경로를 **기본 경로**로 인식하도록 환경변수를 설정해줘야 합니다.
-
-// 환경 변수 설정
-```
-export KUBECONFIG=$HOME/.kube/config
-```
-
-
-
-// 잘 됐는지 확인
-```
+// 그러고 vscode에서 node 확인\
 kubectl get nodes
-// 아래 같은 결과가 나와야함.
-NAME              STATUS   ROLES                  AGE     VERSION
-ip-172-31-47-96   Ready    control-plane,master   6m52s   v1.32.4+k3s1
+
+C:\Users\USER\Desktop\Carbon>kubectl get nodes
+NAME                          STATUS   ROLES                  AGE   VERSION
+k3d-carbon-cluster-server-0   Ready    control-plane,master   45m   v1.31.5+k3s1       
+
+C:\Users\USER\Desktop\Carbon>kubectl apply -f k8s/
+deployment.apps/carbon-exporter created
+service/carbon-exporter created
+
+// 여기서 pod 상태가 errImagePull 상태인 에러가 발생함... 
+
+C:\Users\USER\Desktop\Carbon>kubectl get pods
+NAME                               READY   STATUS         RESTARTS   AGE
+carbon-exporter-765ff6fb9d-zz24t   0/1     ErrImagePull   0          10s
+
+C:\Users\USER\Desktop\Carbon>kubectl get svc
+NAME              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+carbon-exporter   ClusterIP   10.43.234.64   <none>        8000/TCP   15s
+kubernetes        ClusterIP   10.43.0.1      <none>        443/TCP    47m
+
+// k8s/exporter-deployment.yaml 파일 열어서 
+containers:
+      - name: carbon-exporter
+        image: carbon-exporter:latest
+        imagePullPolicy: Never ## 이 줄 추가
+        
+// 그러고 corbon-exporter 지우고 다시 포하면 됨.
+
+C:\Users\USER\Desktop\Carbon>kubectl delete deployment carbon-exporter
+deployment.apps "carbon-exporter" deleted
+
+C:\Users\USER\Desktop\Carbon>kubectl apply -f k8s/
+deployment.apps/carbon-exporter created
+service/carbon-exporter unchanged
+
+C:\Users\USER\Desktop\Carbon>kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+carbon-exporter-64d68c596c-qnn98   1/1     Running   0          6s
+
+// 이렇게 뜨면 성공한거임. 이제 exporter가 클러스터 내에서 정상 작동중이고, prometheus가 metric
+수집할 준비가 완료됐음.
 ```
 
-// 환경 변수 설정 영구 적용
+prometheus 설치
 
-```
-echo 'export KUBECONFIG=$HOME/.kube/config' >> ~/.bashrc
-source ~/.bashrc
-```
+```bash
+// 먼저 helm부터 설치
+// 관리자 권한 cmd
+choco install kubernetes-helm
 
-### 2 스케줄링 알고리즘 
+// vscode 재 시작
+helm version
 
-// 로컬에 있는 zip 파일을 ec2로 전송
-```
-scp -i ~/Desktop/carbon_ubuntu.pem ~/Desktop/carbon.zip ubuntu@52.79.236.222:~/
-```
+// prometheus 설치
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/prometheus -f grafana/provisioning/prometheus-values.yaml
 
-// ec2 서버에서 jungwongee파일 압축 해제
-```
-unzip "carbon.zip" -d carbon-scheduler
-이거 안되면
-unzip "/home/ubuntu/carbon.zip" -d carbon-scheduler
-```
+// prometheus 서버가 제대로 동작 중인지 확인
+// pod 상태 == running
+C:\Users\USER\Desktop\Carbon>kubectl get pods -l app.kubernetes.io/name=prometheus
+NAME                                 READY   STATUS    RESTARTS   AGE
+prometheus-server-78b77d9478-4j4d5   2/2     Running   0          79s
 
-// 압축 해제 후 carbon_scheduler.py 파일로 접근
-```
-cd carbon-scheduler
-ls
-cd ./--JungWonHee
-ls
+// 포트 : 80
+C:\Users\USER\Desktop\Carbon>kubectl get svc -l app.kubernetes.io/name=prometheus
+NAME                TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+prometheus-server   ClusterIP   10.43.253.78   <none>        80/TCP    83s 
 ```
 
-// python, kubernetes 설치 ~  실행
-```
-ls
-pip3 install -r requirements.txt
-pip3 install kubernetes requests
+grafana 설치
 
-// .local/bin을 path에 추가하기
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
 
-python3 carbon_scheduler.py
-```
+helm install grafana grafana/grafana -f grafana/provisioning/grafana-values.yaml
 
-그러면 pod 생성 되었다는 메세지 뜸.
+C:\Users\USER\Desktop\Carbon>kubectl get pods -l app.kubernetes.io/name=grafana
+NAME                       READY   STATUS            RESTARTS   AGE
+grafana-6876bf4c5d-5dmkn   0/1     PodInitializing   0          12s
 
-// pod가 잘 생성 되었는지 확인
-```
-kubectl get pods
+C:\Users\USER\Desktop\Carbon>kubectl get svc -l app.kubernetes.io/name=grafana
+NAME      TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+grafana   NodePort   10.43.212.124   <none>        80:32619/TCP   16s
 
-// 결과 화면이 아래처럼 나와야 함.
-NAME        READY   STATUS    RESTARTS   AGE
-task-5350   1/1     Running   0          6m3s
-```
+// 로컬에서 grafana 접속 가능.
+http://localhost:32619
 
-### 3 시각화
+// 접속 안되면 Windows + Docker Desktop + k3d 조합에서 발생하는 네트워크 포워딩 이슈임.
+// kubectl port-forward로 강제 연결
+C:\Users\USER\Desktop\Carbon>kubectl port-forward svc/grafana 3000:80
 
-// 로컬에 있는 flask, react를 ec2 서버로 전송
-```
-// 코드 형식
-scp -i [pem키 위치]~/Desktop/visualization.pem [zip 파일 위치]~/Desktop/carbon_back.zip ubuntu@[ec2 퍼블릭 ip]12.345.67.89:~/
-
-scp -i ~/Desktop/visualization.pem ~/Desktop/carbon_back.zip ubuntu@[ec2 퍼블릭 ip]:~/
-
-scp -i ~/Desktop/visualization.pem ~/Desktop/visualization.zip ubuntu@[ec2 퍼블릭 ip]:~/
-```
-
-// ec2 서버에서 압축 해제
-```
-unzip "carbon_back.zip" -d carbon-back
-unzip "visualization.zip" -d visualization
-```
-
-// flask 실행을 위해 가상환경 생성
-```
-sudo apt update
-sudo apt install python3.10-venv
-
-// 가상 환경 생성
-python3 -m venv venv
-
-// 가상 환경 활성화(다음 부터는 바로 이거 하고 python app.py 하면 됨)
-source venv/bin/activate
-```
-
-// requirement.txt 생성 후 app.py 실행
-```
-echo -e "Flask\nflask-cors" > requirements.txt
-pip install -r requirements.txt
-python app.py
-```
-
-// react
-```
-cd ~/visualization/carbon-dashboard
-npm install
-npm run dev
-```
-
-// vite 권한 문제 발생
-```
-// 권한 확인 및 수정
-chmod +x node_modules/.bin/vite
-
-// 그래도 안되면.. node_modules 삭제 후 재설치
-rm -rf node_modules
-
-// 다시 실행
-npm install
-npm run dev
-```
-
-// node.js 버전 업그레이드 해야됨
-```
-// 최소 14~16 이상이 필요함
-node -v
-
-// 18 이상으로 업그레이드
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
-
---- // 충돌 있을 때만
-// 충돌 있으면 걍 강제로 덮어버리는게 빠르더라
-sudo dpkg -i --force-overwrite /var/cache/apt/archives/nodejs_18.20.8-1nodesource1_amd64.deb
-
-// 의존성 깨진 부분 정리
-sudo apt -f install
----
-
-// 업그레이드 확인
-node -v
-npm -v
-
-// 다시 react 의존성 설치
-cd ~/visualization/carbon-dashboard
-rm -rf node_modules
-npm install
-
-// 실행(-- --host 이거는 ec2 외부 ip에서 접속 가능하게 해줌)
-npm run dev -- --host
-
-// http://[ec2 퍼블릭 ip]:5173 으로 접속하면 됨.
-```
-
-// axios 설정(vite.config.js)
-```
-// react의 axios 설정을 해줘야 함.
-// vite.config.js에 프록시 설정을 해줄거임
-
-import { defineConfig } from 'vite'
-
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-
-  plugins: [react()],
-
-  server: {
-
-    proxy: {
-
-      // React 개발 서버에서 "/api"로 들어오는 요청은
-
-      // Flask 서버(EC2의 IP)로 프록시한다.
-
-      '/api': {
-
-        target: 'http://[ec2 프라이빗 ip]:5000', // EC2 내부(프라이빗) IP
-
-        changeOrigin: true,
-
-        secure: false,
-
-      },
-
-    },
-
-  },
-
-})
-```
-
-// axios 설정(api.js)
-```
-// 개발하기 편하라고 base_api 를 상수값으로 local:5000 지정했을 거임.
-// 상수 지정 지우고, 그냥 상대 경로로 다 지정해주면 됨.
-// src/services/api.js
-import axios from 'axios';
-
-export const fetchCarbonData = async () => {
-  const res = await axios.get('/api/carbon'); // ✅ 이렇게 절대 상대 경로!
-  return res.data;
-};
-
-export const fetchJobData = async () => {
-  const res = await axios.get('/api/jobs');
-  return res.data;
-};
-
-export const fetchClusterLoad = async () => {
-  const res = await axios.get('/api/cluster-load');
-  return res.data;
-};
-
-export const fetchScheduleData = async () => {
-  const res = await axios.get('/api/schedule');
-  return res.data;
-};
-
+// 그러고 브라우저에서 아래 주소로 접속
+http://localhost:3000
 ```
