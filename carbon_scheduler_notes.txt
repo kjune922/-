@@ -1,0 +1,32 @@
+Caspian 스케줄러의 깃허브 파일을 분석 (보고서에 쓸 땐 이 한 줄만 쓰셔도 돼요)
+아래는 분석한 결과입니다.
+
+Caspian 스케줄러 구성
+1. go.mod: Go 의존성 설정 파일
+2. cmd 폴더: 실행 엔트리 포인트
+3. core 폴더: 스케줄링 알고리즘과 최적화 로직 (핵심 기능)
+	1) defaults.go: 스케줄링 알고리즘에서 사용되는 기본값 설정 변수들을 정의, 변수 종류로는 기본 시간 슬롯 수, 시간 슬롯 길이, 재방문 주기, 기본 탄소 강도, 기본 실행 시간이 있음, 스케줄을 얼마나 자주 재계산할지를 결정
+	2) types.go: 핵심 데이터 구조체 정의, 클러스터와 작업 상태를 이 구조체들로 표현하고 알고리즘에선 이 데이터를 바탕으로 계산함
+		(1) Cluster 구조체: 클러스터 이름, 위치 코드, 시간대 탄소 강도 리스트(클러스터는 시간에 따라 다른 탄소 배출량을 가질 수 있으므로 리스트로 구현), 가용 리소스(남은 CPU/GPU 수량), 리소스 사용량 대비 전력 모량(전력 효율)
+		(2) Job 구조체: 작업 식별자, 마감 시간, 필요한 리소스 양, 실행 시간, 남은 실행 시간,  선호하는 클러스터
+		(3) Weights: 고정 소수점 정밀도 보장
+		(4) Weights2: 일반 float 사용, 정밀도 손실 가능성 있음
+4. monitoring 폴더: 탄소 강도 데이터를 수집하는 Carbon Tracker 모듈
+	1) carbon_monitoring.go: 탄소 강도 데이터를 수집하고 저장하는 핵심 코드, 외부 탄소 데이터 API를 호출해서 수집하고, Kubernetes 리소스에 반영하는 역할
+		(1) Monitor 클래스: 모니터링 대상 클러스터 목록, MCAD clusterinfo 리소스와 통신하는 Kubernetes REST 클라이언트, 예측 시간 길이
+		(2) NewMonitor(): Kubernetes API와 통신하기 위한 클라이언트 설정
+		(3) GetClusters(): MCAD의 clusterinfo CRD 목록을 가져옴, 각 클러스터의 이름과 위치 정보를 core.Cluster 형식으로 저장
+		(4) UpdateClusterInfo(): 전체 클러스터 목록을 순회하면서 UpdateCarbon() 호출
+	2) data/ 탄소 강도 관련 샘플 데이터 또는 캐시 저장소
+5. scheduler 폴더: 전체 스케줄링 로직 제어, AppWrapper 업데이트
+	1) scheduler.go
+ 		(1) GetAppWrappers(): 실행 가능한 작업 수집, MCAD의 REST API를 통해 모든 AppWrapper 목록을 가져옴, 각 작업의 남은 실행 시간과 남은 마감 시간을 계산함, 실행 불가능한 작업은 PutHoldOnAppWrapper()로 suspend 처리
+		(2) GetClustersInfo(): 각 클러스터 상태 확인(CPU/GPU 가용량, 리소스 사용량 대비 전력 소모량(PowerSlope, 전력 효율), 시간대별 탄소 강도 리스트 등)
+		(3) Optimize(): Z1 ~ Z3 목적 최적화하여 실행 시간/위치 결정, 목적함수 obj1~3 설정(차례로 탄소 배출량 역수(클수록 점수 높음), 조기 실행 유도(빨리 실행할수록 점수 높음), 마감 기한 내 실행 유도 기능(늦을수록 점수 낮음)), 구현식 obj[i*M*T+j*T+t] = ω1 * obj1 / θ1 + ω2 * obj2 / θ2 + ω3 * obj3 / θ3 (실제 구현이 아닌 논문 기반의 이론식), 실제 코드 obj[i*M*T+j*T+t] = omega1*obj1[i*M*T+j*T+t]/theta1 + omega2*obj2[i*M*T+j*T+t]/theta2 + omega3*obj3[i*M*T+j*T+t]/theta3 (obj1 = 탄소 기반 목적 함수, obj2 = 빠른 실행 선호, obj3 = 마감기한 준수)
+		(4) LPSolve(): 목적함수 기반 LP 최적화, 제약 조건: 하나의 작업은 하나의 클러스터, 하나의 시간에만 배치, CPU/GPU 자원 초과 불가
+		(5) Schedule(): MCAD AppWrapper에 반영 
+6. main 폴더: Kubernetes 컨트롤러 구성 및 실행 관련 코드
+7. .gitignore, LICENSE.txt: 일반적인 메타데이터 파일
+8. README.md: 프로젝트 설명서
+
+앞으로의 계획: Caspian 스케줄러에 대한 분석은 아직 진행 중이고, 이 스케줄러를 실제로는 어떻게 활용하는지, 우리 팀의 프로젝트와 어떻게 접목시킬지는 더 조사해봐야 할 것 같음
