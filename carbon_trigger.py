@@ -2,7 +2,7 @@ import subprocess
 import time
 import os
 
-CLUSTERS = ["k3d-kr-seo-a", "k3d-kr-seo-b", "k3d-kr-seo-c", "k3d-kr-seo-d"]
+CLUSTERS = ["k3d-k3d-kr-seo-a", "k3d-k3d-kr-seo-b", "k3d-k3d-kr-seo-c", "k3d-k3d-kr-seo-d"]
 THRESHOLD = 0.5  # gCO₂eq
 MIGRATION_SCRIPT = "python3 migration_manager.py"
 INTERVAL = 10

@@ -4,7 +4,7 @@ import yaml
 import json
 import os
 
-TARGET_POD_NAME = "web"
+TARGET_POD_NAME = "cpu-burn-high"
 NAMESPACE = "default"
 SOURCE_CLUSTER = "k3d-k3d-kr-seo-a"
 DEST_CLUSTER = "k3d-k3d-kr-seo-d"

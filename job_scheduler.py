@@ -2,7 +2,7 @@ import subprocess
 import yaml
 import time
 
-CLUSTERS = ["k3d-kr-seo-a", "k3d-kr-seo-b", "k3d-kr-seo-c", "k3d-kr-seo-d"]
+CLUSTERS = ["k3d-k3d-kr-seo-a", "k3d-k3d-kr-seo-b", "k3d-k3d-kr-seo-c", "k3d-k3d-kr-seo-d"]
 JOB_TEMPLATE = "job-template.yaml"
 DEPLOYED_JOBS = []
 

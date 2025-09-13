@@ -1,10 +1,10 @@
 from monitor import get_cluster_cpu_memory_usage
 
 CARBON_FACTORS = {
-    "k3d-kr-seo-a": 350,
-    "k3d-kr-seo-b": 280,
-    "k3d-kr-seo-c": 400,
-    "k3d-kr-seo-d": 250
+    "k3d-k3d-kr-seo-a": 350,
+    "k3d-k3d-kr-seo-b": 280,
+    "k3d-k3d-kr-seo-c": 400,
+    "k3d-k3d-kr-seo-d": 250
 }
 
 def estimate_carbon(cpu_millicores, mem_mebibytes, carbon_factor):

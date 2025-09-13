@@ -9,12 +9,11 @@ import os
 # --- 설정 ---
 TARGET_POD_NAME = "web"
 NAMESPACE = "default"
-SOURCE_CLUSTER = "k3d-kr-seo-a"
-DEST_CLUSTER = "k3d-kr-seo-b"
+SOURCE_CLUSTER = "k3d-k3d-kr-seo-a"
+DEST_CLUSTER = "k3d-k3d-kr-seo-b"
 
 BACKUP_FILE = "pod-backup.yaml"
 CHECKPOINT_FILE = "checkpoints.json"
-
 # --- 함수: 실행 결과 가져오기 ---
 def run(cmd):
     return subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode()
